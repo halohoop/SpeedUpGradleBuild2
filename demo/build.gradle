@@ -1,0 +1,91 @@
+apply plugin: 'com.android.application'
+
+def tmpSplits = null;
+android {
+    compileSdkVersion 25
+    buildToolsVersion "25.0.3"
+
+    def buildDataTime = project.hasProperty('HaloDevBuild')? 77 : new Date().format('yyMMddHHmm').toInteger()
+
+    defaultConfig {
+        applicationId "com.halohoop.speedupgradlebuild"
+        minSdkVersion 11
+        targetSdkVersion 25
+        versionCode buildDataTime
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
+    }
+    splits {
+        density {
+            enable true
+            reset()
+            include "mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"
+        }
+        abi {
+            enable true
+            reset()
+            include 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a' //select ABIs to build APKs for
+            universalApk false //whether generate an additional APK that contains all the ABIs
+        }
+    }
+    tmpSplits = splits
+//    if(project.hasProperty('HaloDevBuild')){
+//        splits.density.enable = false
+//        splits.abi.enable=false
+//        aaptOptions.cruncherEnabled = false
+//    }
+    if(project.hasProperty('HaloDevBuild')){
+        splits.density.enable = false
+        splits.abi {
+            enable true
+            reset()
+            include 'arm64-v8a' //select ABIs to build APKs for
+            universalApk false //whether generate an additional APK that contains all the ABIs
+        }
+        aaptOptions.cruncherEnabled = false
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    flavorDimensions "dev"
+    productFlavors {
+        development {
+            dimension "dev"
+            minSdkVersion 21
+            resConfigs "en"//"xxhdpi"
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+
+    implementation 'com.android.support:appcompat-v7:25.3.1'
+    testImplementation 'junit:junit:4.12'
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+    implementation 'com.android.support:multidex:1.0.1'
+}
+
+task hello {
+    doLast{
+        println project.hasProperty('HaloDevBuild')
+        println tmpSplits.density.enable
+        println tmpSplits.abi.enable
+    }
+}
